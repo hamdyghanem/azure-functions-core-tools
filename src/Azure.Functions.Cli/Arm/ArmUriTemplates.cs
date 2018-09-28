@@ -14,6 +14,9 @@ namespace Azure.Functions.Cli.Arm
         public static readonly ArmUriTemplate Subscriptions = new ArmUriTemplate($"{ArmUrl}/subscriptions", ArmApiVersion);
         public static readonly ArmUriTemplate Subscription = new ArmUriTemplate($"{Subscriptions.TemplateUrl}/{{subscriptionId}}", ArmApiVersion);
         public static readonly ArmUriTemplate SubscriptionResourceByNameAndType = new ArmUriTemplate(Subscription.TemplateUrl + "/resources?$filter=(name eq '{resourceName}' and resourceType eq '{resourceType}')", ArmApiVersion);
+        public static readonly ArmUriTemplate SubscriptionResourceByName = new ArmUriTemplate(Subscription.TemplateUrl + "/resources?$filter=(name eq '{resourceName}')", ArmApiVersion);
+        public static readonly ArmUriTemplate SubscriptionResourceByType = new ArmUriTemplate(Subscription.TemplateUrl + "/resources?$filter=(resourceType eq '{resourceType}')", ArmApiVersion);
+        public static readonly ArmUriTemplate SubscriptionResourceById = new ArmUriTemplate(Subscription.TemplateUrl + "/resourceGroups/{resourceGroup}/providers/{resourceType}/{resourceName}", "2018-02-01");
     }
 
     public class ArmUriTemplate

@@ -20,22 +20,41 @@ namespace Azure.Functions.Cli.Helpers
 
         public static async Task<Site> GetFunctionApp(string name, string accessToken)
         {
-            var subscriptions = await GetSubscriptions(accessToken);
+            var subscriptions = await GetSubscriptions(accessToken);     
+
             foreach (var subscription in subscriptions.value)
             {
-                var functionApps = await ArmHttpAsync<ArmArrayWrapper<ArmGenericResource>>(
-                HttpMethod.Get,
-                ArmUriTemplates.SubscriptionResourceByNameAndType.Bind(new
-                {
-                    subscriptionId = subscription.subscriptionId,
-                    resourceType = "Microsoft.Web/sites",
-                    resourceName = name
-                }),
-                accessToken);
+                //var functionApps = await ArmHttpAsync<ArmArrayWrapper<ArmGenericResource>>(
+                //HttpMethod.Get,
+                //ArmUriTemplates.SubscriptionResourceByNameAndType.Bind(new
+                //{
+                //    subscriptionId = subscription.subscriptionId,
+                //    resourceType = "Microsoft.Web/sites",
+                //    resourceName = name
+                //}),
+                //accessToken);
 
-                if (functionApps.value.Any())
+                //if (functionApps.value.Any())
+                //{
+                //    var app = new Site(functionApps.value.First().id);
+                //    await LoadFunctionApp(app, accessToken);
+                //    return app;
+                //}
+
+                var functionApp = await ArmHttpAllowFailureAsync<ArmGenericResource>(
+                    HttpMethod.Get,
+                    ArmUriTemplates.SubscriptionResourceById.Bind(new
+                    {
+                        subscriptionId = subscription.subscriptionId,
+                        resourceType = "Microsoft.Web/sites",
+                        resourceName = name,
+                        resourceGroup = name
+                    }),
+                    accessToken);
+
+                if (functionApp != null)
                 {
-                    var app = new Site(functionApps.value.First().id);
+                    var app = new Site(functionApp.id);
                     await LoadFunctionApp(app, accessToken);
                     return app;
                 }
@@ -58,6 +77,7 @@ namespace Azure.Functions.Cli.Helpers
                 LoadSitePublishingCredentialsAsync(site, accessToken),
                 LoadSiteConfigAsync(site, accessToken),
                 LoadAppSettings(site, accessToken),
+                LoadAuthSettings(site, accessToken),
                 LoadConnectionStrings(site, accessToken)
             }
             //.IgnoreFailures()
@@ -78,6 +98,14 @@ namespace Azure.Functions.Cli.Helpers
             var url = new Uri($"{ArmUriTemplates.ArmUrl}{site.SiteId}/config/AppSettings/list?api-version={ArmUriTemplates.WebsitesApiVersion}");
             var armResponse = await ArmHttpAsync<ArmWrapper<Dictionary<string, string>>>(HttpMethod.Post, url, accessToken);
             site.AzureAppSettings = armResponse.properties;
+            return site;
+        }
+
+        private async static Task<Site> LoadAuthSettings(Site site, string accessToken)
+        {
+            var url = new Uri($"{ArmUriTemplates.ArmUrl}{site.SiteId}/config/AuthSettings/list?api-version={ArmUriTemplates.WebsitesApiVersion}");
+            var armResponse = await ArmHttpAsync<ArmWrapper<Dictionary<string, string>>>(HttpMethod.Post, url, accessToken);
+            site.AzureAuthSettings = armResponse.properties;
             return site;
         }
 
@@ -192,10 +220,43 @@ namespace Azure.Functions.Cli.Helpers
             response.EnsureSuccessStatusCode();
         }
 
+        private static async Task<T> ArmHttpAllowFailureAsync<T>(HttpMethod method, Uri uri, string accessToken, object payload = null)
+        {
+            var response = await ArmClient.HttpInvoke(method, uri, accessToken, payload, retryCount: 3);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsAsync<T>();
+            }
+            else
+            {
+                return default(T);
+            }
+        }
+
         public static async Task<HttpResult<Dictionary<string, string>, string>> UpdateFunctionAppAppSettings(Site site, string accessToken)
         {
             var url = new Uri($"{ArmUriTemplates.ArmUrl}{site.SiteId}/config/AppSettings?api-version={ArmUriTemplates.WebsitesApiVersion}");
             var response = await ArmClient.HttpInvoke(HttpMethod.Put, url, accessToken, new { properties = site.AzureAppSettings });
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsAsync<ArmWrapper<Dictionary<string, string>>>();
+                return new HttpResult<Dictionary<string, string>, string>(result.properties);
+            }
+            else
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                var parsedResult = JsonConvert.DeserializeObject<JObject>(result);
+                var errorMessage = parsedResult["Message"].ToString();
+                return string.IsNullOrEmpty(errorMessage)
+                    ? new HttpResult<Dictionary<string, string>, string>(null, result)
+                    : new HttpResult<Dictionary<string, string>, string>(null, errorMessage);
+            }
+        }
+
+        public static async Task<HttpResult<Dictionary<string, string>, string>> UpdateFunctionAppAuthSettings(Site site, string accessToken)
+        {
+            var url = new Uri($"{ArmUriTemplates.ArmUrl}{site.SiteId}/config/authsettings?api-version={_storageApiVersion}");
+            var response = await ArmClient.HttpInvoke(HttpMethod.Put, url, accessToken, new { properties = site.AzureAuthSettings });
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadAsAsync<ArmWrapper<Dictionary<string, string>>>();

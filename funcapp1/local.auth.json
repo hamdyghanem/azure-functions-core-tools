@@ -1,0 +1,12 @@
+{
+  "allowedAudiences": ["https://glennatest3.azurewebsites.net/.auth/login/aad/callback"],
+  "isAadAutoProvisioned": "True",
+  "clientId": "0ae3955e-3577-4b87-a1a9-d09ad1779ef2",
+  "clientSecret": "mHCspEiXDKHeMQqQEdgi10X7obEoAcPWyHNRkr6A1Alfq0AaHi7BTjc2iRg3#3Q058AkpLguF6a61ZLdwwaZvkxCJZYS$v4920PuRq#QRKc89DxX6bt95qQvGonkhrjA",
+  "defaultProvider": 0,
+  "enabled": "true",
+  "issuer": "https://sts.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/",
+  "tokenStoreEnabled": "True",
+  "runtimeVersion": "1.0.0",
+  "unauthenticatedClientAction": 1,
+}

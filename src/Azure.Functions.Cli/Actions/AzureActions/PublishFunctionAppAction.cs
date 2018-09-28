@@ -138,6 +138,7 @@ namespace Azure.Functions.Cli.Actions.AzureActions
                 if (PublishLocalSettingsOnly)
                 {
                     await PublishLocalAppSettings(functionApp, additionalAppSettings);
+                    await PublishLocalAuthSettings(functionApp);
                 }
                 else
                 {
@@ -259,6 +260,7 @@ namespace Azure.Functions.Cli.Actions.AzureActions
             if (PublishLocalSettings)
             {
                 await PublishLocalAppSettings(functionApp, additionalAppSettings);
+                await PublishLocalAuthSettings(functionApp);
             }
             else if (additionalAppSettings.Any())
             {
@@ -422,16 +424,39 @@ namespace Azure.Functions.Cli.Actions.AzureActions
             return true;
         }
 
-        private IDictionary<string, string> MergeAppSettings(IDictionary<string, string> azure, IDictionary<string, string> local, IDictionary<string, string> additional)
+        private async Task<bool> PublishLocalAuthSettings(Site functionApp)
+        {
+            var localAuthSettings = _secretsManager.GetAuthSettings();
+            return await PublishAuthSettings(functionApp, localAuthSettings);
+        }
+
+        private async Task<bool> PublishAuthSettings(Site functionApp, IDictionary<string, string> local)
+        {
+            var additionalSettings = new Dictionary<string, string>();
+            functionApp.AzureAuthSettings = MergeAppSettings(functionApp.AzureAuthSettings, local, additionalSettings);
+            var result = await AzureHelper.UpdateFunctionAppAuthSettings(functionApp, AccessToken);
+            if (!result.IsSuccessful)
+            {
+                ColoredConsole
+                    .Error
+                    .WriteLine(ErrorColor("Error updating app settings:"))
+                    .WriteLine(ErrorColor(result.ErrorResult));
+                return false;
+            }
+            return true;
+        }
+
+        private IDictionary<string, string> MergeAppSettings(IDictionary<string, string> azure, IDictionary<string, string> local, IDictionary<string, string> additional, bool appSettings = true)
         {
             var result = new Dictionary<string, string>(azure);
 
             foreach (var pair in local)
             {
                 if (result.ContainsKeyCaseInsensitive(pair.Key) &&
-                    !result.GetValueCaseInsensitive(pair.Key).Equals(pair.Value, StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(result.GetValueCaseInsensitive(pair.Key), pair.Value, StringComparison.OrdinalIgnoreCase))
                 {
-                    ColoredConsole.WriteLine($"App setting {pair.Key} is different between azure and {SecretsManager.AppSettingsFileName}");
+                    string filename = (appSettings) ? SecretsManager.AppSettingsFileName : SecretsManager.AuthSettingsFileName;
+                    ColoredConsole.WriteLine($"Setting {pair.Key} is different between azure and {filename}");
                     if (OverwriteSettings)
                     {
                         ColoredConsole.WriteLine("Overwriting setting in azure with local value because '--overwrite-settings [-y]' was specified.");
