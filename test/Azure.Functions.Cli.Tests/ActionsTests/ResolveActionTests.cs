@@ -3,6 +3,7 @@ using System.Linq;
 using Autofac;
 using FluentAssertions;
 using Azure.Functions.Cli.Actions;
+using Azure.Functions.Cli.Actions.AuthActions;
 using Azure.Functions.Cli.Actions.AzureActions;
 using Azure.Functions.Cli.Actions.HostActions;
 using Azure.Functions.Cli.Actions.LocalActions;
@@ -52,6 +53,7 @@ namespace Azure.Functions.Cli.Tests.ActionsTests
         [InlineData("azure functionapp --help", typeof(HelpAction))]
         [InlineData("azure --help", typeof(HelpAction))]
         [InlineData("--help", typeof(HelpAction))]
+        [InlineData("auth create-aad", typeof(CreateAADApplication))]
         public void ResolveCommandLineCorrectly(string args, Type returnType)
         {
             var fileSystem = Substitute.For<IFileSystem>();
@@ -92,6 +94,9 @@ namespace Azure.Functions.Cli.Tests.ActionsTests
 
             builder.RegisterType<TemplatesManager>()
                 .As<ITemplatesManager>();
+
+            builder.RegisterType<AuthManager>()
+                .As<IAuthManager>();
 
             return builder.Build();
         }

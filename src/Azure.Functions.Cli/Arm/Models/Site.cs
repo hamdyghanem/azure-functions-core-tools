@@ -8,7 +8,7 @@ namespace Azure.Functions.Cli.Arm.Models
     {
         public string SiteId { get; private set; }
 
-        public string SiteName { get; private set; }
+        public string SiteName { get; set; }
 
         public string HostName { get; set; }
 
@@ -27,6 +27,8 @@ namespace Azure.Functions.Cli.Arm.Models
         public string Sku { get; set; }
 
         public IDictionary<string, string> AzureAppSettings { get; set; }
+
+        public IDictionary<string, string> AzureAuthSettings { get; set; }
 
         public IDictionary<string, AppServiceConnectionString> ConnectionStrings { get; set; }
 

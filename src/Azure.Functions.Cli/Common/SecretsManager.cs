@@ -28,6 +28,21 @@ namespace Azure.Functions.Cli.Common
             }
         }
 
+        public static string AuthSettingsFilePath
+        {
+            get
+            {
+                var authFile = "local.auth.json";
+                var rootPath = ScriptHostHelpers.GetFunctionAppRootDirectory(Environment.CurrentDirectory, new List<string>
+                {
+                    ScriptConstants.HostMetadataFileName,
+                    authFile,
+                });
+                var authFilePath = Path.Combine(rootPath, authFile);
+                return authFilePath;
+            }
+        }
+
         public static string AppSettingsFileName
         {
             get
@@ -36,9 +51,23 @@ namespace Azure.Functions.Cli.Common
             }
         }
 
+        public static string AuthSettingsFileName
+        {
+            get
+            {
+                return Path.GetFileName(AuthSettingsFilePath);
+            }
+        }
+
         public IDictionary<string, string> GetSecrets()
         {
             var appSettingsFile = new AppSettingsFile(AppSettingsFilePath);
+            return appSettingsFile.GetValues();
+        }
+
+        public IDictionary<string, string> GetAuthSettings()
+        {
+            var appSettingsFile = new AuthSettingsFile(AuthSettingsFilePath);
             return appSettingsFile.GetValues();
         }
 
