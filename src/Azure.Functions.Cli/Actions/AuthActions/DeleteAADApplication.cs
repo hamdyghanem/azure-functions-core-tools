@@ -6,8 +6,8 @@ using Fclp;
 
 namespace Azure.Functions.Cli.Actions.AuthActions
 {
-    // Access via `func auth create-aad {appName}`
-    [Action(Name = "delete-aad", Context = Context.Auth, HelpText = "Creates an Azure Active Directory application with given application name")]
+    // Access via `func auth delete-aad --id {appId}`
+    [Action(Name = "delete-aad", Context = Context.Auth, HelpText = "Deletes the Azure Active Directory application identified with object/app ID")]
     class DeleteAADApplication : BaseAuthAction
     {
         private readonly IAuthManager _authManager;

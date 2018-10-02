@@ -457,10 +457,10 @@ namespace Azure.Functions.Cli.Actions.AzureActions
                     !string.Equals(result.GetValueCaseInsensitive(pair.Key), pair.Value, StringComparison.OrdinalIgnoreCase))
                 {
                     string filename = (appSettings) ? SecretsManager.AppSettingsFileName : SecretsManager.AuthSettingsFileName;
-                    ColoredConsole.WriteLine($"Setting {pair.Key} is different between azure and {filename}");
+                    ColoredConsole.WriteLine($"Setting {pair.Key} is different between Azure and {filename}");
                     if (OverwriteSettings)
                     {
-                        ColoredConsole.WriteLine("Overwriting setting in azure with local value because '--overwrite-settings [-y]' was specified.");
+                        ColoredConsole.WriteLine("Overwriting setting in Azure with local value because '--overwrite-settings [-y]' was specified.");
                         result[pair.Key] = pair.Value;
                     }
                     else
@@ -468,7 +468,7 @@ namespace Azure.Functions.Cli.Actions.AzureActions
                         var answer = string.Empty;
                         do
                         {
-                            ColoredConsole.WriteLine(QuestionColor("Would you like to overwrite value in azure? [yes/no/show]"));
+                            ColoredConsole.WriteLine(QuestionColor("Would you like to overwrite value in Azure? [yes/no/show]"));
                             answer = Console.ReadLine();
                             if (answer.Equals("show", StringComparison.OrdinalIgnoreCase))
                             {
