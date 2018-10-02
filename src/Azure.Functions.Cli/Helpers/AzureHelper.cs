@@ -55,7 +55,6 @@ namespace Azure.Functions.Cli.Helpers
                 }
             }
 
-
             throw new ArmResourceNotFoundException($"Can't find app with name \"{name}\"");
         }
 
@@ -238,19 +237,6 @@ namespace Azure.Functions.Cli.Helpers
         {
             var response = await ArmClient.HttpInvoke(method, uri, accessToken, payload, retryCount: 3);
             response.EnsureSuccessStatusCode();
-        }
-
-        private static async Task<T> ArmHttpAllowFailureAsync<T>(HttpMethod method, Uri uri, string accessToken, object payload = null)
-        {
-            var response = await ArmClient.HttpInvoke(method, uri, accessToken, payload, retryCount: 3);
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsAsync<T>();
-            }
-            else
-            {
-                return default(T);
-            }
         }
 
         public static async Task<HttpResult<Dictionary<string, string>, string>> UpdateFunctionAppAppSettings(Site site, string accessToken)
