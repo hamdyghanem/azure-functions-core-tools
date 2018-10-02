@@ -13,7 +13,7 @@ namespace Azure.Functions.Cli.Common
     {      
         public bool IsEncrypted { get; set; }
 
-        public Dictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, string> Values { get; set; } = new Dictionary<string, string>();
 
         private readonly string _filePath;
 
@@ -26,31 +26,20 @@ namespace Azure.Functions.Cli.Common
             {
                 var content = FileSystemHelpers.ReadAllTextFromFile(_filePath);
                 var authSettings = JObject.Parse(content);
-                Values = authSettings.ToObject<Dictionary<string, object>>(); 
-                
-                // Serialize each of the auth settings to allow for arrays
-                foreach (var pair in Values)
-                {
-                    Values[pair.Key] = JsonConvert.SerializeObject(pair.Value);
-                }
+                Values = authSettings.ToObject<Dictionary<string, string>>();                
             }
             catch
             {
-                Values = new Dictionary<string, object>();
+                Values = new Dictionary<string, string>();
                 IsEncrypted = false;
             }
         }
 
-        public void SetAuthSetting(string name, object value)
-        {
-            if (value.GetType() != typeof(string))
-            {
-                value = JsonConvert.SerializeObject(value);
-            }
-
+        public void SetAuthSetting(string name, string value)
+        {          
             if (IsEncrypted)
             {
-                Values[name] = Convert.ToBase64String(ProtectedData.Protect(Encoding.Default.GetBytes((string) value), reason));
+                Values[name] = Convert.ToBase64String(ProtectedData.Protect(Encoding.Default.GetBytes(value), reason));
             }
             else
             {
@@ -78,7 +67,8 @@ namespace Azure.Functions.Cli.Common
             {
                 try
                 {
-                    return Values.ToDictionary(k => k.Key, v => string.IsNullOrEmpty((string) v.Value) ? string.Empty : Encoding.Default.GetString(ProtectedData.Unprotect(Convert.FromBase64String((string) v.Value), reason)));
+                    return Values.ToDictionary(k => k.Key, v => string.IsNullOrEmpty((string) v.Value) ? string.Empty : 
+                        Encoding.Default.GetString(ProtectedData.Unprotect(Convert.FromBase64String((string) v.Value), reason)));
                 }
                 catch (Exception e)
                 {
