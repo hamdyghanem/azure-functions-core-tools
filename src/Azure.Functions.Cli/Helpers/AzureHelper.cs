@@ -273,7 +273,6 @@ namespace Azure.Functions.Cli.Helpers
             }
         }
 
-<<<<<<< HEAD
         public static async Task<HttpResult<Dictionary<string, string>, string>> UpdateFunctionAppAuthSettings(Site site, string accessToken)
         {
             var url = new Uri($"{ArmUriTemplates.ArmUrl}{site.SiteId}/config/authsettings?api-version={_storageApiVersion}");

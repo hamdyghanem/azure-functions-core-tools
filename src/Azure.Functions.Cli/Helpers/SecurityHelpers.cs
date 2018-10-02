@@ -70,14 +70,14 @@ namespace Azure.Functions.Cli.Helpers
             }
         }
 
-        internal static async Task<X509Certificate2WithAdditionalInfo> GetOrCreateCertificate(string certPath, string certPassword)
+        internal static async Task<(X509Certificate2 cert, string path, string password)> GetOrCreateCertificate(string certPath, string certPassword)
         {
             if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrEmpty(certPassword))
             {
                 certPassword = File.Exists(certPassword)
                     ? File.ReadAllText(certPassword).Trim()
                     : certPassword;
-                return new X509Certificate2WithAdditionalInfo(certPath, certPassword);
+                return (new X509Certificate2(certPath, certPassword), certPath, certPassword);
             }
             else if (CommandChecker.CommandExists("openssl"))
             {
@@ -115,7 +115,7 @@ namespace Azure.Functions.Cli.Helpers
             throw new CliException("Auto cert generation is currently not working on the .NET Core build.");
         }
 
-        internal static async Task<X509Certificate2WithAdditionalInfo> CreateCertificateOpenSSL()
+        internal static async Task<(X509Certificate2 cert, string path, string password)> CreateCertificateOpenSSL()
         {
             const string DEFAULT_PASSWORD = "localcert";
 
@@ -138,20 +138,9 @@ namespace Azure.Functions.Cli.Helpers
                 ColoredConsole.Error.WriteLine(output.ToString());
                 throw new CliException($"Could not create a Certificate using openssl.");
             }
-
-            return new X509Certificate2WithAdditionalInfo($"{certFileNames}certificate.pfx", DEFAULT_PASSWORD);
-        }
-    }
-
-    class X509Certificate2WithAdditionalInfo : X509Certificate2
-    {
-        public string Path;
-        public string Password;
-
-        public X509Certificate2WithAdditionalInfo(string path, string password) : base(path, password)
-        {
-            this.Path = path;
-            this.Password = password;
+            
+            string fullName = $"{certFileNames}certificate.pfx";
+            return (new X509Certificate2($"{fullName}", DEFAULT_PASSWORD), fullName, DEFAULT_PASSWORD);
         }
     }
 }

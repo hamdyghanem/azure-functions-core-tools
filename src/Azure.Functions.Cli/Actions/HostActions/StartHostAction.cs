@@ -190,19 +190,26 @@ namespace Azure.Functions.Cli.Actions.HostActions
         /// </summary>
         /// <param name="listenUrl">Where clients send requests</param>
         /// <param name="hostUrl">Where middleware authentication container sends its modified requests. Also where the Functions runtime will be listening to</param>
+        /// <param name="certPath">Full (not relative) path to local certificate (used for HTTPS)</param>
+        /// <param name="certPassword">Password used when creating above certificate</param>
         /// <returns>Started task</returns>
-        private async Task StartAuthenticationProcessAsync(string listenUrl, string hostUrl, X509Certificate2WithAdditionalInfo cert)
+        private async Task StartAuthenticationProcessAsync(string listenUrl, string hostUrl, string certPath, string certPassword)
         {
             // Listen URL: Where client requests come in to
             // Host Destination URL: Output location of middleware authentication container. This is what the Functions runtime will be listening to.
             if (CommandChecker.CommandExists("dotnet"))
             {
-                string dllPath = @"D:\source\repos\EasyAuthLinux\src\EasyAuth\MiddlewareLinux\bin\Debug\netcoreapp2.0\MiddlewareLinux.dll";
+                string dllPath = @"C:\source\repos\EasyAuthLinux\src\EasyAuth\MiddlewareLinux\bin\Debug\netcoreapp2.0\MiddlewareLinux.dll";
                 //var auth = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 //    ? new Executable("cmd", $"/c dotnet {dllPath} --Host.ListenUrl {listenUrl} --Host.DestinationHostUrl {hostUrl}")
                 //    : new Executable("dotnet", $"{dllPath} --Host.ListenUrl {listenUrl} --Host.DestinationHostUrl {hostUrl}");
 
-                string query = $"--Host.ListenUrl {listenUrl} --Host.DestinationHostUrl {hostUrl} --Host.HttpsCertPath {cert.Path} --Host.HttpsCertPassword {cert.Password}";
+                string query = $"--Host.ListenUrl {listenUrl} --Host.DestinationHostUrl {hostUrl} --local {SecretsManager.MiddlewareAuthSettingsFileName}";
+                if (certPath != null && certPassword != null)
+                {
+                    query += $"  --Host.HttpsCertPath {certPath} --Host.HttpsCertPassword {certPassword}";
+                }
+
                 var process = Process.Start("CMD.exe", $"/C dotnet {dllPath} {query}");
 
                 var cancellationToken = new CancellationTokenSource();
@@ -254,6 +261,7 @@ namespace Azure.Functions.Cli.Actions.HostActions
 
             var settings = SelfHostWebHostSettingsFactory.Create(Environment.CurrentDirectory);
             var authSettings = _secretsManager.GetAuthSettings();
+<<<<<<< HEAD
             bool authenticationEnabled = authSettings["WEBSITE_AUTH_ENABLED"].ToLower().Equals("true");
 
             int originalPort = Port;
@@ -262,6 +270,34 @@ namespace Azure.Functions.Cli.Actions.HostActions
                 Port = Port + 2;
             }
             (var listenUri, var baseUri, var certificate) = await Setup();
+=======
+            bool authenticationEnabled = authSettings.ContainsKeyCaseInsensitive("enabled") &&
+                authSettings["enabled"].ToLower().Equals("true");
+
+            int originalPort = Port;
+            if (authenticationEnabled)
+            {
+                Port = Port + 2;
+            }
+            (var listenUri, var baseUri, var certificate, string certPath, string certPassword) = await Setup();
+
+            // Regardless of whether or not auth is enabled, clients should send requests here
+            var originalListenUri = listenUri.SetPort(originalPort);
+            var originalBaseUri = baseUri.SetPort(originalPort);
+            var authTask = Task.CompletedTask;
+
+            if (authenticationEnabled)
+            {
+                // 1. Modify the Function's Uris to listen to the output of the middleware container, 
+                // rather than the port client requests come in on
+                // 2. Start the middleware container to listen to the Function's 
+                // 
+
+                string originalUrl = originalListenUri.ToString(); // 0.0.0.0:port, where requests will be sent
+                string destinationHostUrl = baseUri.ToString(); // Output of middleware container
+                authTask = StartAuthenticationProcessAsync(originalUrl, destinationHostUrl, certPath, certPassword);
+            }
+>>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
 
             // Regardless of whether or not auth is enabled, clients should send requests here
             var originalListenUri = listenUri.SetPort(originalPort);
@@ -295,7 +331,10 @@ namespace Azure.Functions.Cli.Actions.HostActions
             DisplayDisabledFunctions(scriptHost);
             await SetupDebuggerAsync(baseUri);
 
+<<<<<<< HEAD
             ColoredConsole.WriteLine(Yellow($"{authTask.IsCompleted} vs. {runTask.IsCompleted}"));
+=======
+>>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
             await Task.WhenAll(runTask, authTask);
         }
 
@@ -456,6 +495,7 @@ namespace Azure.Functions.Cli.Actions.HostActions
             }
         }
 
+<<<<<<< HEAD
         private async Task<(Uri listenUri, Uri baseUri, X509Certificate2WithAdditionalInfo cert)> Setup()
         {
             var protocol = UseHttps ? "https" : "http";
@@ -463,6 +503,18 @@ namespace Azure.Functions.Cli.Actions.HostActions
                 ? await SecurityHelpers.GetOrCreateCertificate(CertPath, CertPassword)
                 : null;
             return (new Uri($"{protocol}://0.0.0.0:{Port}"), new Uri($"{protocol}://localhost:{Port}"), cert);
+=======
+        private async Task<(Uri listenUri, Uri baseUri, X509Certificate2 cert, string path, string password)> Setup()
+        {
+            var protocol = UseHttps ? "https" : "http";
+            if (UseHttps)
+            {
+                (X509Certificate2 cert, string certPath, string certPassword) = await SecurityHelpers.GetOrCreateCertificate(CertPath, CertPassword);
+                return (new Uri($"{protocol}://0.0.0.0:{Port}"), new Uri($"{protocol}://localhost:{Port}"), cert, certPath, certPassword);
+            }
+
+            return (new Uri($"{protocol}://0.0.0.0:{Port}"), new Uri($"{protocol}://localhost:{Port}"), null, null, null);
+>>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
         }
 
         public class Startup : IStartup
