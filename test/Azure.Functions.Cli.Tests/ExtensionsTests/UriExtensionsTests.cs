@@ -37,6 +37,7 @@ namespace Azure.Functions.Cli.Tests
         public async Task IsServerRunningPositiveTest()
         {
             var port = GetAvailablePort();
+            var address= GetAvailableAddress();
             using (var httpHost = new HttpHost(port))
             {
                 await httpHost.OpenAsync(r => {
@@ -62,7 +63,7 @@ namespace Azure.Functions.Cli.Tests
                     return Task.FromResult(response);
                 });
 
-                var uri = new Uri($"http://localhost:{port}");
+                var uri = new Uri($"http://{address}:{port}");
                 var result = await uri.IsServerRunningAsync();
 
                 result.Should().BeTrue(because: "Server is running");
@@ -78,6 +79,19 @@ namespace Azure.Functions.Cli.Tests
             {
                 listener.Start();
                 return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+        private static int GetAvailableAddress()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            try
+            {
+                listener.Start();
+                return ((IPEndPoint)listener.LocalEndpoint).Address;
             }
             finally
             {

@@ -41,6 +41,8 @@ namespace Azure.Functions.Cli.Actions.HostActions
 
         public int Port { get; set; }
 
+        public string HttpAddress { get; set; }
+
         public int NodeDebugPort { get; set; }
 
         public string CorsOrigins { get; set; }
@@ -186,7 +188,7 @@ namespace Azure.Functions.Cli.Actions.HostActions
                     var url = $"{config.BaseAddress.ToString()}{hostRoutePrefix}{httpRoute}";
                     ColoredConsole
                         .WriteLine($"\t{Yellow($"{function.Name}:")} {Green(url)}")
-                        .WriteLine(); 
+                        .WriteLine();
                 }
             }
         }
@@ -454,6 +456,12 @@ namespace Azure.Functions.Cli.Actions.HostActions
         private Uri Setup()
         {
             var protocol = UseHttps ? "https" : "http";
+            HttpAddress = "localhost";
+            var hostSettings = _secretsManager.GetHostStartSettings();
+            if (!string.IsNullOrEmpty(hostSettings.LocalHttpAddress))
+            {
+                HttpAddress = hostSettings.LocalHttpAddress;
+            }
             var actions = new List<InternalAction>();
             if (SecurityHelpers.IsUrlAclConfigured(protocol, Port))
             {
@@ -474,7 +482,7 @@ namespace Azure.Functions.Cli.Actions.HostActions
                     Environment.Exit(ExitCodes.GeneralError);
                 }
             }
-            return new Uri($"{protocol}://localhost:{Port}");
+            return new Uri($"{protocol}://{HttpAddress}:{Port}");
         }
 
         /// <summary>

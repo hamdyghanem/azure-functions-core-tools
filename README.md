@@ -8,6 +8,20 @@
 
 The Azure Functions Core Tools provide a local development experience for creating, developing, testing, running, and debugging Azure Functions.
 
+## Why this branch
+
+The Azure Functions Core Tools is running locally and uses the "localhost" as static value. We can not use this outside the local host.
+To connect to the function you can assign the current ip of the system to be used instead of the localhost.
+To assign it:
+change local".setting" file to have:
+
+LocalHttpAddress :"{your IP}"
+
+Note that you can not call the function form the same system, you should call it from another system that can see this system through network: 
+sample: 192.168.1.10\api\function1
+you can still debug it.
+Visual studio has to run as Administrator
+
 ## Installing
 
 **NOTE**: This package only currently works on Windows, since the underlying Functions Host is not yet cross-platform. You can upvote this GitHub issue if you're interested in running on other platforms: [make the Azure Functions Core Tools cross platform](https://github.com/Azure/azure-functions-cli/issues/13).
