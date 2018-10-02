@@ -261,16 +261,6 @@ namespace Azure.Functions.Cli.Actions.HostActions
 
             var settings = SelfHostWebHostSettingsFactory.Create(Environment.CurrentDirectory);
             var authSettings = _secretsManager.GetAuthSettings();
-<<<<<<< HEAD
-            bool authenticationEnabled = authSettings["WEBSITE_AUTH_ENABLED"].ToLower().Equals("true");
-
-            int originalPort = Port;
-            if (authenticationEnabled)
-            {
-                Port = Port + 2;
-            }
-            (var listenUri, var baseUri, var certificate) = await Setup();
-=======
             bool authenticationEnabled = authSettings.ContainsKeyCaseInsensitive("enabled") &&
                 authSettings["enabled"].ToLower().Equals("true");
 
@@ -297,23 +287,6 @@ namespace Azure.Functions.Cli.Actions.HostActions
                 string destinationHostUrl = baseUri.ToString(); // Output of middleware container
                 authTask = StartAuthenticationProcessAsync(originalUrl, destinationHostUrl, certPath, certPassword);
             }
->>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
-
-            // Regardless of whether or not auth is enabled, clients should send requests here
-            var originalListenUri = listenUri.SetPort(originalPort);
-            var originalBaseUri = baseUri.SetPort(originalPort);
-            var authTask = Task.CompletedTask;
-
-            if (authenticationEnabled)
-            {
-                // 1. Start the MiddleWare Container with two parameters: Host.ListenUrl and Host.DestinationHostUrl
-                // 2. Modify the Functions' Uris to listen to the output of the middleware container, 
-                // rather than the port client requests come in on
-
-                string originalUrl = originalListenUri.ToString(); // 0.0.0.0:port, where requests will be sent
-                string destinationHostUrl = baseUri.ToString(); // Output of middleware container
-                authTask = StartAuthenticationProcessAsync(originalUrl, destinationHostUrl, certificate);
-            }
 
             IWebHost host = await BuildWebHost(settings, workerRuntime, listenUri, certificate);
             var runTask = host.RunAsync();
@@ -331,10 +304,6 @@ namespace Azure.Functions.Cli.Actions.HostActions
             DisplayDisabledFunctions(scriptHost);
             await SetupDebuggerAsync(baseUri);
 
-<<<<<<< HEAD
-            ColoredConsole.WriteLine(Yellow($"{authTask.IsCompleted} vs. {runTask.IsCompleted}"));
-=======
->>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
             await Task.WhenAll(runTask, authTask);
         }
 
@@ -495,15 +464,6 @@ namespace Azure.Functions.Cli.Actions.HostActions
             }
         }
 
-<<<<<<< HEAD
-        private async Task<(Uri listenUri, Uri baseUri, X509Certificate2WithAdditionalInfo cert)> Setup()
-        {
-            var protocol = UseHttps ? "https" : "http";
-            X509Certificate2WithAdditionalInfo cert = UseHttps
-                ? await SecurityHelpers.GetOrCreateCertificate(CertPath, CertPassword)
-                : null;
-            return (new Uri($"{protocol}://0.0.0.0:{Port}"), new Uri($"{protocol}://localhost:{Port}"), cert);
-=======
         private async Task<(Uri listenUri, Uri baseUri, X509Certificate2 cert, string path, string password)> Setup()
         {
             var protocol = UseHttps ? "https" : "http";
@@ -514,7 +474,6 @@ namespace Azure.Functions.Cli.Actions.HostActions
             }
 
             return (new Uri($"{protocol}://0.0.0.0:{Port}"), new Uri($"{protocol}://localhost:{Port}"), null, null, null);
->>>>>>> 249fb3f50790dc42719d3d755245c7664b57b094
         }
 
         public class Startup : IStartup
